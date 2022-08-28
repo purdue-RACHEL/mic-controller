@@ -9,9 +9,27 @@
 
 #include "stm32f0xx.h"
 #include <stdio.h>
+#include "uart.h"
+
+
+void nano_wait(unsigned int n) {
+    asm(    "        mov r0,%0\n"
+            "repeat: sub r0,#83\n"
+            "        bgt repeat\n" : : "r"(n) : "r0", "cc");
+}
 
 
 int main()
 {
+    setup_usart5();
+
+    enable_tty_interrupt();
+
+    for( ;; )
+        {
+        puts("H");
+        nano_wait(1000000000);
+        }
+
     return 0;
 }
