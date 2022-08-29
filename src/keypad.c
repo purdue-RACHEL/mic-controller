@@ -1,4 +1,5 @@
 #include "keypad.h"
+#include "uart.h"
 
 char offset;
 char history[16];
@@ -17,6 +18,9 @@ void enable_ports()
     RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
     RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
 
+    // enable clock to apb2enr for exti
+    RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
+
     // Configure PC0-10 as output
     GPIOC->MODER &= 0xffc00000;
     GPIOC->MODER |= 0x00155555;
@@ -31,6 +35,17 @@ void enable_ports()
     // configure PDR for PB4-PB7
     GPIOB->PUPDR &= ~0xff00;
     GPIOB->PUPDR |= 0xaa00;
+
+    EXTI->RTSR |= 0xf0;
+
+    // unmask EXTI interrupts for 7:4
+    EXTI->IMR |= 0xf0;
+
+    // enable EXTI interrupts on GPIOB[7:4]
+    SYSCFG->EXTICR[1] |= 0x1111;
+
+    // enable interrupt for EXTI4_15
+    NVIC->ISER[0] |= 1<<7;
 }
 
 
@@ -161,6 +176,104 @@ void setup_tim7()
     TIM7->CR1 |= TIM_CR1_CEN;
 }
 
+
+void EXTI4_15_IRQHandler(void)
+{
+    int read = EXTI->PR;
+
+    int pin = 0;
+
+    char key = 0;
+
+    switch(offset)
+    {
+        case 3:
+            pin = 12;
+            break;
+        case 2:
+            pin = 8;
+            break;
+        case 1:
+            pin = 4;
+            break;
+        case 0:
+            pin = 0;
+            break;
+    }
+
+    switch(read)
+    {
+        case 0x80:
+            pin += 3;
+            break;
+        case 0x40:
+            pin += 2;
+            break;
+        case 0x20:
+            pin += 1;
+            break;
+        case 0x10:
+            pin += 0;
+            break;
+    }
+
+    switch(pin) {
+        case 15:
+            key = '1';
+            break;
+        case 14:
+            key = '2';
+            break;
+        case 13:
+            key = '3';
+            break;
+        case 12:
+            key = 'A';
+            break;
+        case 11:
+            key = '4';
+            break;
+        case 10:
+            key = '5';
+            break;
+        case 9:
+            key = '6';
+            break;
+        case 8:
+            key = 'B';
+            break;
+        case 7:
+            key = '7';
+            break;
+        case 6:
+            key = '8';
+            break;
+        case 5:
+            key = '9';
+            break;
+        case 4:
+            key = 'C';
+            break;
+        case 3:
+            key = '*';
+            break;
+        case 2:
+            key = '0';
+            break;
+        case 1:
+            key = '#';
+            break;
+        case 0:
+            key = 'D';
+            break;
+        }
+
+    if(key != 0)
+        puts(&key);
+
+    EXTI->PR |= 0xf0;
+
+}
 
 //===========================================================================
 // getkey()    (Autotest #11)

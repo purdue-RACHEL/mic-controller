@@ -25,18 +25,9 @@ int main()
 
     enable_tty_interrupt();
 
-//    for( ;; )
-//        {
-//        puts("H");
-//        nano_wait(1000000000);
-//        }
-
     enable_ports();
     setup_tim7();
     for( ;; ) {
-        char key = getkey();
-        if(key != 0)
-            printf(key);
     }
 
     return 0;
