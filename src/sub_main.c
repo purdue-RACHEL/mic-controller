@@ -25,7 +25,7 @@ int main()
 
     enable_tty_interrupt();
 
-    enable_ports();
+    powerup_keypad();
     setup_tim7();
     for( ;; ) {
     }

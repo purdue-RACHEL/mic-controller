@@ -10,20 +10,12 @@
 
 #include "stm32f0xx.h"
 
-void enable_ports();
+void powerup_keypad();
 
 void set_row();
-
-int get_cols();
-
-void insert_queue(int n);
-
-void update_hist(int cols);
 
 void TIM7_IRQHandler();
 
 void setup_tim7();
-
-int getkey();
 
 #endif /* KEYPAD_H_ */

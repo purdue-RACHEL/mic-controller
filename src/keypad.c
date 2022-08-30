@@ -1,65 +1,53 @@
 #include "keypad.h"
 #include "uart.h"
 
-char offset;
-char history[16];
-char display[8];
-char queue[2];
-int  qin;
-int  qout;
+char keypad_row;
 
 //===========================================================================
-// enable_ports()    (Autotest #3)
-// Configure the pins for GPIO Ports B and C.
-// Parameters: none
+// powerup_keypad()
+// Configure the pins for matrix keypad and enable EXTI interrupts for them.
 //===========================================================================
-void enable_ports()
+void powerup_keypad()
 {
+    // Enable clock to GPIOB
     RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
-    RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
 
-    // enable clock to apb2enr for exti
+    // Enable clock to SYSCFG : EXTI
     RCC->APB2ENR |= RCC_APB2ENR_SYSCFGCOMPEN;
 
-    // Configure PC0-10 as output
-    GPIOC->MODER &= 0xffc00000;
-    GPIOC->MODER |= 0x00155555;
-
-    // Configure PB0-PB3 as output
+    // Configure PB0-3 as output : keypad lines
     GPIOB->MODER &= ~0xff;
     GPIOB->MODER |= 0x55;
 
-    // Configure PB4-7 as input
+    // Configure PB4-7 as input : keypad lines
     GPIOB->MODER &= ~0xff00;
 
-    // configure PDR for PB4-PB7
+    // Configure pull-down resistor for PB4-7
     GPIOB->PUPDR &= ~0xff00;
     GPIOB->PUPDR |= 0xaa00;
 
+    // Enable rising trigger for EXTI PB4-7
     EXTI->RTSR |= 0xf0;
 
-    // unmask EXTI interrupts for 7:4
+    // Unmask EXTI interrupts on PB4-7
     EXTI->IMR |= 0xf0;
 
-    // enable EXTI interrupts on GPIOB[7:4]
+    // Enable EXTI interrupts on PB4-7
     SYSCFG->EXTICR[1] |= 0x1111;
 
-    // enable interrupt for EXTI4_15
-    NVIC->ISER[0] |= 1<<7;
+    // Enable interrupt for EXTI4_15
+    NVIC->ISER[0] |= (1 << EXTI4_15_IRQn);
 }
 
 
 //===========================================================================
-// set_row()    (Autotest #5)
+// set_row()
 // Set the row active on the keypad matrix.
-// Parameters: none
 //===========================================================================
 void set_row()
 {
-    char digit = offset &= 0x3;
-
     char dec;
-    switch(digit) {
+    switch(keypad_row) {
     case 3:
         dec = 0x8;
         break;
@@ -73,93 +61,36 @@ void set_row()
         dec = 0x1;
     }
 
+    // TODO: use BSRR?
+
     GPIOB->ODR &= ~0xf;
     GPIOB->ODR |= dec;
 
 }
 
-
 //===========================================================================
-// get_cols()    (Autotest #6)
-// Read the column pins of the keypad matrix.
-// Parameters: none
-// Return value: The 4-bit value read from PC[7:4].
-//===========================================================================
-int get_cols()
-{
-    int cols = GPIOB->IDR;
-    cols >>= 4;
-    cols &= 0xf;
-    return(cols);
-}
-
-
-//===========================================================================
-// insert_queue()    (Autotest #7)
-// Insert the key index number into the two-entry queue.
-// Parameters: n: the key index number
-//===========================================================================
-void insert_queue(int n)
-{
-    n |= 0x80;
-    queue[qin] = n;
-    if(qin == 1)
-        qin = 0;
-    else
-        qin = 1;
-}
-
-
-//===========================================================================
-// update_hist()    (Autotest #8)
-// Check the columns for a row of the keypad and update history values.
-// If a history entry is updated to 0x01, insert it into the queue.
-// Parameters: none
-//===========================================================================
-void update_hist(int cols)
-{
-    int row = offset & 0x3;
-
-
-    for(int i = 0; i < 4; i++) {
-        history[4 * row + i] <<= 1;
-        history[4 * row + i] |= (cols >> i) & 1;
-
-        if(cols >> i == 0x1)
-            insert_queue(4 * row + i);
-    }
-
-}
-
-
-//===========================================================================
-// Timer 7 ISR()    (Autotest #9)
-// This is the Timer 7 ISR
-// Parameters: none
-// (Write the entire subroutine below.)
+// Timer 7 ISR()
+// Set the next keypad row high.
 //===========================================================================
 void TIM7_IRQHandler()
 {
     // Acknowledge interrupt
     TIM7->SR &= ~TIM_SR_UIF;
 
-    int cols = get_cols();
-    update_hist(cols);
-    offset += 1;
-    offset &= 7;
+    // Increment keypad_row to set
+    keypad_row += 1;
+    keypad_row &= 3;
     set_row();
-
 }
 
 
 //===========================================================================
-// setup_tim7()    (Autotest #10)
-// Configure timer 7
-// Parameters: none
+// setup_tim7()
+// Configure timer 7.
 //===========================================================================
 void setup_tim7()
 {
-    // Enable RCC for TIM7
+    // Enable clock to TIM7
     RCC->APB1ENR |= RCC_APB1ENR_TIM7EN;
 
     // Set PSC, ARR -> freq of 1kHz
@@ -179,40 +110,23 @@ void setup_tim7()
 
 void EXTI4_15_IRQHandler(void)
 {
-    int read = EXTI->PR;
-
-    int pin = 0;
+    int keypad_col = EXTI->PR >> 4;
+    int pin = keypad_row << 2;
 
     char key = 0;
 
-    switch(offset)
+    switch(keypad_col)
     {
-        case 3:
-            pin = 12;
-            break;
-        case 2:
-            pin = 8;
-            break;
-        case 1:
-            pin = 4;
-            break;
-        case 0:
-            pin = 0;
-            break;
-    }
-
-    switch(read)
-    {
-        case 0x80:
+        case 0x8:
             pin += 3;
             break;
-        case 0x40:
+        case 0x4:
             pin += 2;
             break;
-        case 0x20:
+        case 0x2:
             pin += 1;
             break;
-        case 0x10:
+        case 0x1:
             pin += 0;
             break;
     }
@@ -266,69 +180,14 @@ void EXTI4_15_IRQHandler(void)
         case 0:
             key = 'D';
             break;
+        default:
+            key = 0;
+            break;
         }
 
     if(key != 0)
         puts(&key);
 
+    // Clear interrupt flag
     EXTI->PR |= 0xf0;
-
-}
-
-//===========================================================================
-// getkey()    (Autotest #11)
-// Wait for an entry in the queue.  Translate it to ASCII.  Return it.
-// Parameters: none
-// Return value: The ASCII value of the button pressed.
-//===========================================================================
-int getkey()
-{
-    do {
-        asm volatile("wfi");
-    } while(queue[qout] == 0);
-
-    int hist = queue[qout] & 0x7f;
-    queue[qout] = 0;
-
-    if(qout == 0)
-        qout = 1;
-    else
-        qout = 0;
-
-    switch(hist) {
-    case 15:
-        return '1';
-    case 14:
-        return '2';
-    case 13:
-        return '3';
-    case 12:
-        return 'A';
-    case 11:
-        return '4';
-    case 10:
-        return '5';
-    case 9:
-        return '6';
-    case 8:
-        return 'B';
-    case 7:
-        return '7';
-    case 6:
-        return '8';
-    case 5:
-        return '9';
-    case 4:
-        return 'C';
-    case 3:
-        return '*';
-    case 2:
-        return '0';
-    case 1:
-        return '#';
-    case 0:
-        return 'D';
-    }
-
-    return 0; // replace this
 }
