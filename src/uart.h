@@ -16,8 +16,6 @@ int putchar(int ch);
 
 int getchar(void);
 
-int __io_putchar(int ch);
-
 int __io_getchar(void);
 
 void USART3_4_5_6_7_8_IRQHandler(void);

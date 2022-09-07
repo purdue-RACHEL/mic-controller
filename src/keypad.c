@@ -186,7 +186,7 @@ void EXTI4_15_IRQHandler(void)
         }
 
     if(key != 0)
-        puts(&key);
+        putchar(key);
 
     // Clear interrupt flag
     EXTI->PR |= 0xf0;

@@ -55,10 +55,6 @@ int putchar(int ch)
 
     USART5->TDR = ch;
 
-    if(ch == '\n') {
-        ch = putchar('\r');
-    }
-
     return ch;
 }
 
@@ -71,12 +67,6 @@ int getchar(void)
         return '\n';
 
     return USART5->RDR;
-}
-
-
-int __io_putchar(int ch)
-{
-    return putchar(ch);
 }
 
 
