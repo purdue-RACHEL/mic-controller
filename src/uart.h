@@ -14,10 +14,6 @@ void setup_usart5(void);
 
 int putchar(int ch);
 
-int getchar(void);
-
-int __io_getchar(void);
-
 void USART3_4_5_6_7_8_IRQHandler(void);
 
 void enable_tty_interrupt(void);

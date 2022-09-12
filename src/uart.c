@@ -59,23 +59,6 @@ int putchar(int ch)
 }
 
 
-int getchar(void)
-{
-    while(!(USART5->ISR & USART_ISR_RXNE));
-
-    if(USART5->RDR == '\r')
-        return '\n';
-
-    return USART5->RDR;
-}
-
-
-int __io_getchar(void)
-{
-    return getchar();
-}
-
-
 void USART3_4_5_6_7_8_IRQHandler(void)
 {
     // Check & Clear ORE flag

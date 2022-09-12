@@ -2,6 +2,7 @@
 #include "uart.h"
 
 char keypad_row;
+char hist[16];
 
 //===========================================================================
 // powerup_keypad()
@@ -77,9 +78,15 @@ void TIM7_IRQHandler()
     // Acknowledge interrupt
     TIM7->SR &= ~TIM_SR_UIF;
 
+    for(int i = 0; i <= 15; i++)
+    {
+        hist[i] <<= 1;
+    }
+
     // Increment keypad_row to set
     keypad_row += 1;
     keypad_row &= 3;
+
     set_row();
 }
 
@@ -113,6 +120,9 @@ void EXTI4_15_IRQHandler(void)
     int keypad_col = EXTI->PR >> 4;
     int pin = keypad_row << 2;
 
+    // TODO: check the rest of the unchecked rows?
+    // to ensure no missed double press?
+
     char key = 0;
 
     switch(keypad_col)
@@ -129,6 +139,16 @@ void EXTI4_15_IRQHandler(void)
         case 0x1:
             pin += 0;
             break;
+    }
+
+    hist[pin] |= 1;
+
+    if(hist[pin] != 0x1)
+    {
+        // Clear interrupt flag
+        EXTI->PR |= 0xf0;
+
+        return;
     }
 
     switch(pin) {
