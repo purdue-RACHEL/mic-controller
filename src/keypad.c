@@ -4,11 +4,10 @@
 char keypad_row;
 char hist[16];
 
-//===========================================================================
-// powerup_keypad()
-// Configure the pins for matrix keypad and enable EXTI interrupts for them.
-//===========================================================================
-void powerup_keypad()
+uint8_t packet = 0;
+
+// Setup keypad
+void setup_keypad()
 {
     // Enable clock to GPIOB
     RCC->AHBENR |= RCC_AHBENR_GPIOBEN;
@@ -41,13 +40,11 @@ void powerup_keypad()
 }
 
 
-//===========================================================================
-// set_row()
-// Set the row active on the keypad matrix.
-//===========================================================================
+// Set the next keypad row
 void set_row()
 {
     char dec;
+
     switch(keypad_row) {
     case 3:
         dec = 0x8;
@@ -62,26 +59,21 @@ void set_row()
         dec = 0x1;
     }
 
-    // TODO: use BSRR?
-
     GPIOB->ODR &= ~0xf;
     GPIOB->ODR |= dec;
-
 }
 
-//===========================================================================
-// Timer 7 ISR()
-// Set the next keypad row high.
-//===========================================================================
+
+// TIM7 ISR - 1 kHz
+// update history & set next row
 void TIM7_IRQHandler()
 {
     // Acknowledge interrupt
     TIM7->SR &= ~TIM_SR_UIF;
 
+    // Update key history - debouncing
     for(int i = 0; i <= 15; i++)
-    {
         hist[i] <<= 1;
-    }
 
     // Increment keypad_row to set
     keypad_row += 1;
@@ -91,10 +83,8 @@ void TIM7_IRQHandler()
 }
 
 
-//===========================================================================
-// setup_tim7()
-// Configure timer 7.
-//===========================================================================
+// Setup TIM7
+// 1 kHz
 void setup_tim7()
 {
     // Enable clock to TIM7
@@ -115,6 +105,8 @@ void setup_tim7()
 }
 
 
+// EXTI 4-7 ISR
+// called on button press
 void EXTI4_15_IRQHandler(void)
 {
     int keypad_col = EXTI->PR >> 4;
@@ -123,8 +115,9 @@ void EXTI4_15_IRQHandler(void)
     // TODO: check the rest of the unchecked rows?
     // to ensure no missed double press?
 
-    char key = 0;
+    uint8_t key = 0;
 
+    // Get column
     switch(keypad_col)
     {
         case 0x8:
@@ -143,70 +136,72 @@ void EXTI4_15_IRQHandler(void)
 
     hist[pin] |= 1;
 
+    // Ensure not bouncing
     if(hist[pin] != 0x1)
     {
-        // Clear interrupt flag
         EXTI->PR |= 0xf0;
-
         return;
     }
 
+    // Get key
     switch(pin) {
         case 15:
-            key = '1';
+            key = ONE;
             break;
         case 14:
-            key = '2';
+            key = TWO;
             break;
         case 13:
-            key = '3';
+            key = THREE;
             break;
         case 12:
-            key = 'A';
+            key = A;
             break;
         case 11:
-            key = '4';
+            key = FOUR;
             break;
         case 10:
-            key = '5';
+            key = FIVE;
             break;
         case 9:
-            key = '6';
+            key = SIX;
             break;
         case 8:
-            key = 'B';
+            key = B;
             break;
         case 7:
-            key = '7';
+            key = SEVEN;
             break;
         case 6:
-            key = '8';
+            key = EIGHT;
             break;
         case 5:
-            key = '9';
+            key = NINE;
             break;
         case 4:
-            key = 'C';
+            key = C;
             break;
         case 3:
-            key = '*';
+            key = ASTERISK;
             break;
         case 2:
-            key = '0';
+            key = ZERO;
             break;
         case 1:
-            key = '#';
+            key = POUND;
             break;
         case 0:
-            key = 'D';
+            key = D;
             break;
         default:
             key = 0;
             break;
         }
 
-    if(key != 0)
-        putchar(key);
+    packet |= (key << 3);
+
+//    TODO: remove this when no longer needed in testing
+//    send_packet();
 
     // Clear interrupt flag
     EXTI->PR |= 0xf0;

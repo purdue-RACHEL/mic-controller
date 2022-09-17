@@ -1,18 +1,21 @@
 #include "uart.h"
 
-void setup_usart5(void)
+uint8_t packet;
+
+// Setup UART to laptop
+// 115200 baud
+void setup_uart(void)
 {
     // Enable RCC to GPIOC, GPIOD
     RCC->AHBENR |= RCC_AHBENR_GPIOCEN | RCC_AHBENR_GPIODEN;
 
     // PC12 -> USART5_TX (AF2)
-    // PD2 -> USART5_RX (AF2)
     GPIOC->MODER &= ~GPIO_MODER_MODER12;
     GPIOC->MODER |= GPIO_MODER_MODER12_1;
     GPIOC->AFR[1] &= ~GPIO_AFRH_AFR12;
     GPIOC->AFR[1] |= 0x00020000;
 
-
+    // PD2 -> USART5_RX (AF2)
     GPIOD->MODER &= ~GPIO_MODER_MODER2;
     GPIOD->MODER |= GPIO_MODER_MODER2_1;
     GPIOD->AFR[0] &= ~GPIO_AFRL_AFR2;
@@ -46,41 +49,50 @@ void setup_usart5(void)
     // Wait for TE and RE acknowledgement
     while(!(USART5->ISR & USART_ISR_TEACK));
     while(!(USART5->ISR & USART_ISR_REACK));
+
+    // Configure USART5 to raise interrupt when RDR not empty
+    USART5->CR1 |= USART_CR1_RXNEIE;
+
+    // Enable interrupt in NVIC_ISER
+    NVIC->ISER[0] |= (1 << USART3_8_IRQn);
 }
 
 
-int putchar(int ch)
+// Send ch to laptop
+int send_packet(void)
 {
     while(!(USART5->ISR & USART_ISR_TXE));
 
-    USART5->TDR = ch;
+    uint8_t temp_packet = packet;
 
-    return ch;
+    USART5->TDR = packet;
+    packet = 0;
+
+    return temp_packet;
 }
 
 
+// UART5 ISR
+// Read input from laptop
+// TODO: processing
 void USART3_4_5_6_7_8_IRQHandler(void)
 {
     // Check & Clear ORE flag
     if (USART5->ISR & USART_ISR_ORE)
         USART5->ICR |= USART_ICR_ORECF;
 
-    // Read new character
-    char ch = USART5->RDR;
+    // Read new packet
+    uint8_t packet = USART5->RDR;
 
-    if( ch != '\n' || ch != '\r' )
-        {
-        // TODO: reads \n on 2nd pass always
-        printf(ch);
-        }
-}
+    switch(packet)
+    {
+        case REQUEST_DATA:
+            send_packet();
+            break;
+        case RESTART_MICRO:
+            // TODO
+            break;
+    }
 
-
-void enable_tty_interrupt(void)
-{
-    // Configure USART5 to raise interrupt when RDR not empty
-    USART5->CR1 |= USART_CR1_RXNEIE;
-
-    // Enable interrupt in NVIC_ISER
-    NVIC->ISER[0] |= (1 << USART3_8_IRQn);
+    printf(packet);
 }

@@ -12,69 +12,38 @@
 #include "uart.h"
 #include "keypad.h"
 #include "adc.h"
+#include "configs.h"
 
+#ifdef DEBUG_MODE
 void nano_wait(unsigned int n) {
     asm(    "        mov r0,%0\n"
             "repeat: sub r0,#83\n"
             "        bgt repeat\n" : : "r"(n) : "r0", "cc");
 }
+#endif
 
 
 int main()
 {
-    int z[1000] = {-1};
-    int index = 0;
-
-    setup_usart5();
-
-    enable_tty_interrupt();
-
+    setup_uart();
     setup_adc();
+    setup_keypad();
 
-    powerup_keypad();
+#ifdef ADC_CALIBRATE
+    calibrate_adc();
+#else
+    set_threshold(400);
+#endif
+
     setup_tim7();
+    setup_tim6();
 
     for( ;; ) {
-
-        start_adc_channel(0);
-
-//        int s = read_adc();
-//        if (s > 1500)
-//        {
-//            printf(s);
-//        }
-
-        z[index] = read_adc();
-
-        if(z[index] > 1800) // or 0
-            printf(z[index-1]);
-
-        if(++index == 1000)
-        {
-            index = 0;
-
-            int max = z[0];
-            int maxindex = 0;
-            int min = z[0];
-            int minindex = 0;
-
-            for(int i = 1; i < 1000; i++)
-            {
-                if(z[i] > max)
-                {
-                    max = z[i];
-                    maxindex = i;
-                }
-
-                if(z[i] < min)
-                {
-                    min = z[i];
-                    minindex = i;
-                }
-
-            }
-            printf(max);
-        }
+#ifdef DEBUG_MODE
+        nano_wait(10000000);
+        send_packet();
+        GPIOC->ODR &= ~GPIO_ODR_6;
+#endif
     }
 
     return 0;

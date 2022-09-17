@@ -10,7 +10,30 @@
 
 #include "stm32f0xx.h"
 
-void powerup_keypad();
+enum
+{
+    NONE,
+    ZERO = 0x10,
+    ONE,
+    TWO,
+    THREE,
+    FOUR,
+    FIVE,
+    SIX,
+    SEVEN,
+    EIGHT,
+    NINE,
+    A,
+    B,
+    C,
+    D,
+    POUND,
+    ASTERISK,
+} Key;
+
+extern uint8_t packet;
+
+void setup_keypad();
 
 void set_row();
 

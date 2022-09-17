@@ -10,12 +10,16 @@
 
 #include "stm32f0xx.h"
 
-void setup_usart5(void);
+enum
+{
+    REQUEST_DATA = 1,
+    RESTART_MICRO,
+} Packet;
 
-int putchar(int ch);
+void setup_uart(void);
+
+int send_packet(void);
 
 void USART3_4_5_6_7_8_IRQHandler(void);
-
-void enable_tty_interrupt(void);
 
 #endif /* UART_H_ */
