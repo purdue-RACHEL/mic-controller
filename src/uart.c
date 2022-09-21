@@ -74,7 +74,6 @@ int send_packet(void)
 
 // UART5 ISR
 // Read input from laptop
-// TODO: processing
 void USART3_4_5_6_7_8_IRQHandler(void)
 {
     // Check & Clear ORE flag
@@ -90,7 +89,7 @@ void USART3_4_5_6_7_8_IRQHandler(void)
             send_packet();
             break;
         case RESTART_MICRO:
-            // TODO
+            NVIC_SystemReset();
             break;
     }
 
