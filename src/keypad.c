@@ -200,9 +200,6 @@ void EXTI4_15_IRQHandler(void)
 
     packet |= (key << 3);
 
-//    TODO: remove this when no longer needed in testing
-//    send_packet();
-
     // Clear interrupt flag
     EXTI->PR |= 0xf0;
 }

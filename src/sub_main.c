@@ -16,9 +16,9 @@
 
 #ifdef DEBUG_MODE
 void nano_wait(unsigned int n) {
-    asm(    "        mov r0,%0\n"
-            "repeat: sub r0,#83\n"
-            "        bgt repeat\n" : : "r"(n) : "r0", "cc");
+    asm("mov r0,%0\n"
+        "repeat: sub r0,#83\n"
+        "bgt repeat\n" : : "r"(n) : "r0", "cc");
 }
 #endif
 
@@ -29,7 +29,7 @@ int main()
     setup_adc();
     setup_keypad();
 
-#ifdef ADC_CALIBRATE
+#ifndef DEBUG_MODE
     calibrate_adc();
 #else
     set_threshold(400);
@@ -43,6 +43,7 @@ int main()
         nano_wait(10000000);
         send_packet();
         GPIOC->ODR &= ~GPIO_ODR_6;
+        GPIOC->ODR &= ~GPIO_ODR_9;
 #endif
     }
 

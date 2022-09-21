@@ -9,8 +9,6 @@
 #define CONFIGS_H_
 
 #define DEBUG_MODE 1
-#define ADC_CALIBRATE 1
-#undef ADC_CALIBRATE
 
 
 

@@ -23,23 +23,22 @@ void TIM6_DAC_IRQHandler(void)
     start_adc_channel(channel);
     adc_in[channel][adc_index] = read_adc();
 
-    // EXPERIMENTAL THRESHOLD LOGIC
     if(adc_in[channel][adc_index] > threshold)
     {
-//            printf(adc_in[channel][index]);
         // TODO: logic for which mic caused this
 
         if(packet != 0x2)
         {
             packet |= 0x02;
 #ifdef DEBUG_MODE
-            GPIOC->ODR |= GPIO_ODR_6;
+            if(channel == 0)
+                GPIOC->ODR |= GPIO_ODR_6;
+            else
+                GPIOC->ODR |= GPIO_ODR_9;
 #endif
         }
 
     }
-
-    // EXPERIMENTAL THRESHOLD LOGIC END
 
     // Ping-Pong (HA!) buffering
     if(++channel == NUM_CHANNELS)
@@ -88,6 +87,7 @@ void setup_adc(void)
 #ifdef DEBUG_MODE
     RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
     GPIOC->MODER |= GPIO_MODER_MODER6_0;
+    GPIOC->MODER |= GPIO_MODER_MODER9_0;
 #endif
 
 
@@ -140,7 +140,7 @@ int read_adc(void)
     return ADC1->DR;
 }
 
-#ifdef ADC_CALIBRATE
+#ifndef DEBUG_MODE
 void calibrate_adc(void)
 {
     int mins[8];
