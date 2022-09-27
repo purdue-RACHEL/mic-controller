@@ -1,8 +1,10 @@
 #include "adc.h"
 #include "configs.h"
+#include "uart.h"
 
 #define NUM_CHANNELS 2
 #define NUM_SAMPLES 1000
+#define COUNTDOWN 40
 
 uint8_t packet;
 
@@ -11,6 +13,10 @@ uint32_t adc_index = 0;
 uint8_t channel = 0;
 
 uint32_t threshold = 0;
+
+int32_t sum = 0;
+
+int32_t counter = -1;
 
 // TIM6 ISR - 20 kHz
 // Reads next ADC channel
@@ -23,21 +29,73 @@ void TIM6_DAC_IRQHandler(void)
     start_adc_channel(channel);
     adc_in[channel][adc_index] = read_adc();
 
-    if(adc_in[channel][adc_index] > threshold)
+    if(counter > -1)
     {
-        // TODO: logic for which mic caused this
+        if(channel == 1)
+            {
+            adc_index += 1;
+            counter += 1;
 
-        if(packet != 0x2)
-        {
-            packet |= 0x02;
+            if(counter == 39)
+            {
+                counter = -1;
+                adc_index = 0;
+                sum = 0;
+
+
+                for(int i = 0; i < 40; i++)
+                    sum += (adc_in[0][i]) - (adc_in[1][i]);
+
+                if(!(packet & (BOUNCE_LEFT | BOUNCE_RIGHT)))
+//                if(1==1)
+                {
+                    if(sum >= 0)
+                    {
+                        packet |= BOUNCE_LEFT;
 #ifdef DEBUG_MODE
-            if(channel == 0)
-                GPIOC->ODR |= GPIO_ODR_6;
-            else
-                GPIOC->ODR |= GPIO_ODR_9;
+                        GPIOC->ODR |= GPIO_ODR_6;
 #endif
+                    }
+
+                    else
+                    {
+                        packet |= BOUNCE_RIGHT;
+#ifdef DEBUG_MODE
+                        GPIOC->ODR |= GPIO_ODR_9;
+#endif
+                    }
+
+
+                }
+
+            }
         }
 
+    }
+
+    else
+    {
+
+        if(adc_in[channel][adc_index] > threshold)
+        {
+            // TODO: logic for which mic caused this
+            counter = 0;
+            adc_index += 1;
+
+
+
+//            if(packet != 0x2)
+//            {
+//                packet |= 0x02;
+//#ifdef DEBUG_MODE
+//                if(channel == 0)
+//                    GPIOC->ODR |= GPIO_ODR_6;
+//                else
+//                    GPIOC->ODR |= GPIO_ODR_9;
+//#endif
+//            }
+
+        }
     }
 
     // Ping-Pong (HA!) buffering
@@ -45,8 +103,8 @@ void TIM6_DAC_IRQHandler(void)
     {
         channel = 0;
 
-        if(++adc_index == NUM_SAMPLES)
-            adc_index = 0;
+//        if(++adc_index == NUM_SAMPLES)
+//            adc_index = 0;
     }
 }
 
@@ -87,6 +145,8 @@ void setup_adc(void)
 #ifdef DEBUG_MODE
     RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
     GPIOC->MODER |= GPIO_MODER_MODER6_0;
+    GPIOC->MODER |= GPIO_MODER_MODER7_0;
+    GPIOC->MODER |= GPIO_MODER_MODER8_0;
     GPIOC->MODER |= GPIO_MODER_MODER9_0;
 #endif
 

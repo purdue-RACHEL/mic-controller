@@ -81,9 +81,9 @@ void USART3_4_5_6_7_8_IRQHandler(void)
         USART5->ICR |= USART_ICR_ORECF;
 
     // Read new packet
-    uint8_t packet = USART5->RDR;
+    uint8_t input_packet = USART5->RDR;
 
-    switch(packet)
+    switch(input_packet)
     {
         case REQUEST_DATA:
             send_packet();
@@ -92,6 +92,4 @@ void USART3_4_5_6_7_8_IRQHandler(void)
             NVIC_SystemReset();
             break;
     }
-
-    printf(packet);
 }

@@ -194,11 +194,23 @@ void EXTI4_15_IRQHandler(void)
             key = D;
             break;
         default:
-            key = 0;
-            break;
+            key = NONE;
+            return;
         }
 
-    packet |= (key << 3);
+    // an error has occurred
+    if(packet & KEY_PRESS) {
+
+
+    } else {
+        packet |= key;
+
+        //TODO should not be needed bc return above
+        //        if(key != NONE)
+        packet |= KEY_PRESS;
+    }
+
+
 
     // Clear interrupt flag
     EXTI->PR |= 0xf0;
