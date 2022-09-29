@@ -2,7 +2,7 @@
 #include "configs.h"
 #include "uart.h"
 
-#define NUM_CHANNELS 2
+#define NUM_CHANNELS 4
 #define NUM_SAMPLES 1000
 #define COUNTDOWN 40
 
@@ -31,7 +31,7 @@ void TIM6_DAC_IRQHandler(void)
 
     if(counter > -1)
     {
-        if(channel == 1)
+        if(channel == NUM_CHANNELS - 1)
             {
             adc_index += 1;
             counter += 1;
@@ -42,9 +42,12 @@ void TIM6_DAC_IRQHandler(void)
                 adc_index = 0;
                 sum = 0;
 
-
-                for(int i = 0; i < 40; i++)
-                    sum += (adc_in[0][i]) - (adc_in[1][i]);
+                for(int i = 0; i < NUM_CHANNELS; i+=2)
+                    for(int j = 0; j < 40; j++)
+                    {
+                        sum += adc_in[i][j];
+                        sum -= adc_in[i+1][j];
+                    }
 
                 if(!(packet & (BOUNCE_LEFT | BOUNCE_RIGHT)))
 //                if(1==1)
@@ -137,10 +140,12 @@ void setup_adc(void)
     // Enable Clock to GPIOA
     RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
 
-    // Set PA0-1 to analog operation
-    // ADC Channels 0-1
+    // Set PA0-3 to analog operation
+    // ADC Channels 0-3
     GPIOA->MODER |= GPIO_MODER_MODER0;
     GPIOA->MODER |= GPIO_MODER_MODER1;
+    GPIOA->MODER |= GPIO_MODER_MODER2;
+    GPIOA->MODER |= GPIO_MODER_MODER3;
 
 #ifdef DEBUG_MODE
     RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
