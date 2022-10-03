@@ -76,6 +76,8 @@ enum
      * errors:
      *      0b00000000 - system rebooted
      *      +0b111xxxxx - multiple bounce error
+     *      +0b101xxxxx - we should award points to left
+     *      +0b110xxxxx - we should award points to right
      *      *0b1001xxxx - multiple press error - stores latest press
      *
      *

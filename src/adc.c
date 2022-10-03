@@ -57,6 +57,12 @@ void TIM6_DAC_IRQHandler(void)
                         GPIOC->ODR |= GPIO_ODR_9;
 #endif
                     }
+                } else {
+                    if(sum >= 0)
+                        packet |= BOUNCE_LEFT;
+                    else
+                        packet |= BOUNCE_RIGHT;
+                    packet |= ERROR_FLAG;
                 }
             }
         }

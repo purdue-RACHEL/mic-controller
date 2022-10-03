@@ -198,19 +198,13 @@ void EXTI4_15_IRQHandler(void)
             return;
         }
 
-    // an error has occurred
+    // A multi-press error has occurred
     if(packet & KEY_PRESS) {
-
-
-    } else {
-        packet |= key;
-
-        //TODO should not be needed bc return above
-        //        if(key != NONE)
-        packet |= KEY_PRESS;
+        packet |= ERROR_FLAG;
+        packet &= ~KEY_CHAR;
     }
 
-
+    packet |= key;
 
     // Clear interrupt flag
     EXTI->PR |= 0xf0;
