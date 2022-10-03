@@ -45,6 +45,7 @@ enum
     D,                          // 0x1D
     POUND,                      // 0x1E
     ASTERISK,                   // 0x1F
+    KEY_CHAR = ASTERISK,        // 0x1F
 
     BOUNCE_RIGHT = 0x20,        // 0x20
 
@@ -75,10 +76,11 @@ enum
      * errors:
      *      0b00000000 - system rebooted
      *      +0b111xxxxx - multiple bounce error
-     *      +0b1001xxxx - multiple press error - stores latest press
+     *      *0b1001xxxx - multiple press error - stores latest press
      *
-     *TODO
+     *
      *      + indicate we need to increase the poll rate on the laptop
+     *      * indicate we (likely) have received a paddle-table hit
      */
 
 } Packet_Status;

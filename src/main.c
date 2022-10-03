@@ -42,6 +42,9 @@ int main()
     setup_tim7();
     setup_tim6();
 
+    // TODO: send reboot packet
+    // must wait until polled by laptop
+
     for( ;; ) {
 #ifdef DEBUG_MODE
         nano_wait(100000000);
@@ -52,8 +55,7 @@ int main()
         sent_packet &= (BOUNCE_LEFT | BOUNCE_RIGHT);
         sent_packet >>= BOUNCEn;
 
-        if(sent_packet != 0)
-        {
+        if(sent_packet != 0) {
             if(last_bounce == sent_packet) {
                 if(last_bounce == 1) {
                     l_score += 1;
@@ -68,8 +70,6 @@ int main()
                 GPIOC->ODR &= ~GPIO_ODR_7;
                 GPIOC->ODR &= ~GPIO_ODR_8;
             }
-
-
         }
 #endif
     }

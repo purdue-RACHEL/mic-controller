@@ -29,85 +29,47 @@ void TIM6_DAC_IRQHandler(void)
     start_adc_channel(channel);
     adc_in[channel][adc_index] = read_adc();
 
-    if(counter > -1)
-    {
-        if(channel == NUM_CHANNELS - 1)
-            {
+    if(counter > -1) {
+        if(channel == NUM_CHANNELS - 1) {
             adc_index += 1;
             counter += 1;
 
-            if(counter == 39)
-            {
+            if(counter == COUNTDOWN - 1) {
                 counter = -1;
                 adc_index = 0;
                 sum = 0;
 
                 for(int i = 0; i < NUM_CHANNELS; i+=2)
-                    for(int j = 0; j < 40; j++)
-                    {
+                    for(int j = 0; j < COUNTDOWN; j++) {
                         sum += adc_in[i][j];
                         sum -= adc_in[i+1][j];
                     }
 
-                if(!(packet & (BOUNCE_LEFT | BOUNCE_RIGHT)))
-//                if(1==1)
-                {
-                    if(sum >= 0)
-                    {
+                if(!(packet & (BOUNCE_LEFT | BOUNCE_RIGHT))) {
+                    if(sum >= 0) {
                         packet |= BOUNCE_LEFT;
 #ifdef DEBUG_MODE
                         GPIOC->ODR |= GPIO_ODR_6;
 #endif
-                    }
-
-                    else
-                    {
+                    } else {
                         packet |= BOUNCE_RIGHT;
 #ifdef DEBUG_MODE
                         GPIOC->ODR |= GPIO_ODR_9;
 #endif
                     }
-
-
                 }
-
             }
         }
-
-    }
-
-    else
-    {
-
-        if(adc_in[channel][adc_index] > threshold)
-        {
-            // TODO: logic for which mic caused this
+    } else {
+        if(adc_in[channel][adc_index] > threshold) {
             counter = 0;
             adc_index += 1;
-
-
-
-//            if(packet != 0x2)
-//            {
-//                packet |= 0x02;
-//#ifdef DEBUG_MODE
-//                if(channel == 0)
-//                    GPIOC->ODR |= GPIO_ODR_6;
-//                else
-//                    GPIOC->ODR |= GPIO_ODR_9;
-//#endif
-//            }
-
         }
     }
 
     // Ping-Pong (HA!) buffering
-    if(++channel == NUM_CHANNELS)
-    {
+    if(++channel == NUM_CHANNELS) {
         channel = 0;
-
-//        if(++adc_index == NUM_SAMPLES)
-//            adc_index = 0;
     }
 }
 
@@ -205,6 +167,7 @@ int read_adc(void)
     return ADC1->DR;
 }
 
+// TODO: ignore this until we need trilateration
 #ifndef DEBUG_MODE
 void calibrate_adc(void)
 {
