@@ -74,5 +74,6 @@ int main()
 #endif
     }
 
+    NVIC_SystemReset();
     return 0;
 }
