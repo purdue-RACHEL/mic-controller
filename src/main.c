@@ -52,7 +52,6 @@ int main()
         GPIOC->ODR &= ~GPIO_ODR_6;
         GPIOC->ODR &= ~GPIO_ODR_9;
 
-        sent_packet >>= BOUNCEn;
         sent_packet &= (BOUNCE_RED | BOUNCE_BLUE);
 
         if(sent_packet != 0) {
