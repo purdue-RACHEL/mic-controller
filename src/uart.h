@@ -47,22 +47,22 @@ enum
     ASTERISK,                   // 0x1F
     KEY_CHAR = ASTERISK,        // 0x1F
 
-    BOUNCE_RIGHT = 0x20,        // 0x20
+    BOUNCE_BLUE = 0x20,        // 0x20
 
     /*
-     *  values between 0x20 and 0x3F indicate a right bounce,
+     *  values between 0x20 and 0x3F indicate a blue bounce,
      *  with any added key presses
      */
 
-    BOUNCE_LEFT = 0x40,         // 0x40
+    BOUNCE_RED = 0x40,         // 0x40
 
     /*
-     *  values between 0x40 and 0x5F indicate a left bounce,
+     *  values between 0x40 and 0x5F indicate a red bounce,
      *  with any added key presses
      */
 
     /*
-     *  values between 0x60 and 0x7F indicate a left and right bounce bounce,
+     *  values between 0x60 and 0x7F indicate a red and blue bounce bounce,
      *  signaling that an error has occurred. as such, the error flag should
      *  high, and these values should not ever be possible.
      */
@@ -75,14 +75,13 @@ enum
      *
      * errors:
      *      0b00000000 - system rebooted
-     *      +0b111xxxxx - multiple bounce error
-     *      +0b101xxxxx - we should award points to left
-     *      +0b110xxxxx - we should award points to right
-     *      *0b1001xxxx - multiple press error - stores latest press
+     *      0b1001XXXX - multi-button press - can still read the key
+     *      0b1X11XXXX -
+     *      0b11X1XXXX - we cannot determine which kind of error - ignore
+     *      0b1100XXXX -
+     *      0b1010XXXX - double bounce error on 1 side - ignore
+     *      0b1110XXXX - double bounce error on both sides - ignore
      *
-     *
-     *      + indicate we need to increase the poll rate on the laptop
-     *      * indicate we (likely) have received a paddle-table hit
      */
 
 } Packet_Status;

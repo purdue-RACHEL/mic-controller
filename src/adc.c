@@ -45,24 +45,24 @@ void TIM6_DAC_IRQHandler(void)
                         sum -= adc_in[i+1][j];
                     }
 
-                if(!(packet & (BOUNCE_LEFT | BOUNCE_RIGHT))) {
+                if(!(packet & (BOUNCE_RED | BOUNCE_BLUE))) {
                     if(sum >= 0) {
-                        packet |= BOUNCE_LEFT;
+                        packet |= BOUNCE_RED;
 #ifdef DEBUG_MODE
                         GPIOC->ODR |= GPIO_ODR_6;
 #endif
                     } else {
-                        packet |= BOUNCE_RIGHT;
+                        packet |= BOUNCE_BLUE;
 #ifdef DEBUG_MODE
                         GPIOC->ODR |= GPIO_ODR_9;
 #endif
                     }
                 } else {
-                    if(sum >= 0)
-                        packet |= BOUNCE_LEFT;
-                    else
-                        packet |= BOUNCE_RIGHT;
-                    packet |= ERROR_FLAG;
+//                    if(sum >= 0)
+//                        packet |= BOUNCE_RED;
+//                    else
+//                        packet |= BOUNCE_BLUE;
+//                    packet |= ERROR_FLAG;
                 }
             }
         }

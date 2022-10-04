@@ -29,8 +29,8 @@ int main()
     setup_adc();
     setup_keypad();
 
-    int l_score = 0;
-    int r_score = 0;
+    int red_score = 0;
+    int blue_score = 0;
     int last_bounce = 0;
 
 #ifndef DEBUG_MODE
@@ -52,16 +52,16 @@ int main()
         GPIOC->ODR &= ~GPIO_ODR_6;
         GPIOC->ODR &= ~GPIO_ODR_9;
 
-        sent_packet &= (BOUNCE_LEFT | BOUNCE_RIGHT);
         sent_packet >>= BOUNCEn;
+        sent_packet &= (BOUNCE_RED | BOUNCE_BLUE);
 
         if(sent_packet != 0) {
             if(last_bounce == sent_packet) {
                 if(last_bounce == 1) {
-                    l_score += 1;
+                    red_score += 1;
                     GPIOC->ODR |= GPIO_ODR_7;
                 } else {
-                    r_score += 1;
+                    blue_score += 1;
                     GPIOC->ODR |= GPIO_ODR_8;
                 }
                 last_bounce = 0;
