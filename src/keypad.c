@@ -146,52 +146,52 @@ void EXTI4_15_IRQHandler(void)
     // Get key
     switch(pin) {
         case 15:
-            key = ONE;
+            key = D;
             break;
         case 14:
-            key = TWO;
-            break;
-        case 13:
-            key = THREE;
-            break;
-        case 12:
-            key = A;
-            break;
-        case 11:
-            key = FOUR;
-            break;
-        case 10:
-            key = FIVE;
-            break;
-        case 9:
-            key = SIX;
-            break;
-        case 8:
-            key = B;
-            break;
-        case 7:
-            key = SEVEN;
-            break;
-        case 6:
-            key = EIGHT;
-            break;
-        case 5:
-            key = NINE;
-            break;
-        case 4:
-            key = C;
-            break;
-        case 3:
-            key = ASTERISK;
-            break;
-        case 2:
-            key = ZERO;
-            break;
-        case 1:
             key = POUND;
             break;
+        case 13:
+            key = ZERO;
+            break;
+        case 12:
+            key = ASTERISK;
+            break;
+        case 11:
+            key = C;
+            break;
+        case 10:
+            key = NINE;
+            break;
+        case 9:
+            key = EIGHT;
+            break;
+        case 8:
+            key = SEVEN;
+            break;
+        case 7:
+            key = B;
+            break;
+        case 6:
+            key = SIX;
+            break;
+        case 5:
+            key = FIVE;
+            break;
+        case 4:
+            key = FOUR;
+            break;
+        case 3:
+            key = A;
+            break;
+        case 2:
+            key = THREE;
+            break;
+        case 1:
+            key = TWO;
+            break;
         case 0:
-            key = D;
+            key = ONE;
             break;
         default:
             key = NONE;
