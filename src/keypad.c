@@ -143,6 +143,9 @@ void EXTI4_15_IRQHandler(void)
         return;
     }
 
+//    if(packet & KEY_PRESS)
+//        return;
+
     // Get key
     switch(pin) {
         case 15:

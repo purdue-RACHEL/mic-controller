@@ -4,7 +4,11 @@
 
 #define NUM_CHANNELS 4
 #define NUM_SAMPLES 1000
-#define COUNTDOWN 40
+#define COUNTDOWN 200
+#define MAX_DELAY 100 // TODO
+
+
+#define NUM_BOUNCES 10
 
 uint8_t packet;
 
@@ -13,6 +17,12 @@ uint32_t adc_index = 0;
 uint8_t channel = 0;
 
 uint32_t threshold = 0;
+
+uint32_t thresh400[NUM_CHANNELS] = {0};
+uint32_t max_thresh400 = 0;
+uint32_t quad[NUM_BOUNCES] = {0};
+uint32_t bounce_count = 0;
+uint32_t timer_delay = 20000;
 
 int32_t sum = 0;
 
@@ -24,6 +34,15 @@ void TIM6_DAC_IRQHandler(void)
 {
     // Acknowledge interrupt
     TIM6->SR &= ~TIM_SR_UIF;
+
+    if(timer_delay < 20000) {
+        timer_delay += 1;
+        return;
+    }
+
+    for(int i = 0; i < NUM_CHANNELS; i++) {
+        thresh400[i] = -1;
+    }
 
     // Read ADC conversion
     start_adc_channel(channel);
@@ -45,11 +64,71 @@ void TIM6_DAC_IRQHandler(void)
                         sum -= adc_in[i+1][j];
                     }
 
+                for(int i = 0; i < NUM_CHANNELS; i++) {
+                    for(int j = 0; j < COUNTDOWN; j++) {
+                        if(adc_in[i][j] > 400) {
+                            thresh400[i] = j;
+                            if(j > max_thresh400)
+                                max_thresh400 = j;
+                            break;
+                        }
+                    }
+                }
+
+                // TODO: these mappings are subject to change w/ wiring
+                                                                                                                                                                                                   if(thresh400[0] == 0)
+                    quad[bounce_count] = 1;
+                else if (thresh400[1] == 0)
+                    quad[bounce_count] = 2;
+                else if(thresh400[3] == 0)
+                    quad[bounce_count] = 3;
+                else
+                    quad[bounce_count] = 4;
+
+                bounce_count++;
+//                timer_delay = 0;
+
+                if(bounce_count == 10)
+                    bounce_count = 0;
+
                 if(!(packet & (BOUNCE_RED | BOUNCE_BLUE))) {
                     if(sum >= 0) {
                         packet |= BOUNCE_RED;
 #ifdef DEBUG_MODE
                         GPIOC->ODR |= GPIO_ODR_6;
+#endif
+
+#ifdef TRILATERATION_MODE
+                        // 1. picks the 3 mics
+                        // 2. converts each sample count delay to ms
+                        int mics[3] = getMics(BOUNCE_RED, adc_in);
+                        float delays[3] = getDelays(BOUNCE_RED, mics, adc_in);
+
+                        // TODO: set MAX_DELAY by testing
+                        // normalize values to MAX_DELAY
+                        float max_delay = delays[0];
+                        for(int i = 1; i < 3; i++)
+                            if(delays[i] > max_delay)
+                                max_delay = delays[i];
+
+                        float norm_factor = MAX_DELAY - max_delay;
+                        if(norm_factor < 0)
+                            norm_factor = 0;
+
+                        for(int i = 0; i < 3; i++)
+                            delays[i] += norm_factor;
+
+                        // TODO: here - check that the max delays[i] is nearly MAX_DELAY
+
+                        // create quarter circles
+
+
+                        for(int i = 0; i < 3; i++) {
+                            switch(mics[i]) {
+                                case 1:
+                            }
+                        }
+
 #endif
                     } else {
                         packet |= BOUNCE_BLUE;
@@ -68,8 +147,10 @@ void TIM6_DAC_IRQHandler(void)
         }
     } else {
         if(adc_in[channel][adc_index] > threshold) {
+            if(channel != 5) {
             counter = 0;
             adc_index += 1;
+            }
         }
     }
 

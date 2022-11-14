@@ -46,8 +46,8 @@ int main()
     // must wait until polled by laptop
 
     for( ;; ) {
-#ifdef DEBUG_MODE
-        nano_wait(100000000);
+#ifndef DEBUG_MODE
+        nano_wait(10000000);
         uint8_t sent_packet = send_packet();
         GPIOC->ODR &= ~GPIO_ODR_6;
         GPIOC->ODR &= ~GPIO_ODR_9;
