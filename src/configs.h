@@ -9,9 +9,5 @@
 #define CONFIGS_H_
 
 #define DEBUG_MODE 1
-#define TRILATERATION_MODE 1
-#undef TRILATERATION_MODE
-
-
 
 #endif /* CONFIGS_H_ */

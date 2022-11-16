@@ -4,7 +4,7 @@
 
 #define NUM_CHANNELS 4
 #define NUM_SAMPLES 1000
-#define COUNTDOWN 200
+#define COUNTDOWN 50
 #define MAX_DELAY 100 // TODO
 
 
@@ -18,13 +18,11 @@ uint8_t channel = 0;
 
 uint32_t threshold = 0;
 
-uint32_t thresh400[NUM_CHANNELS] = {0};
-uint32_t max_thresh400 = 0;
-uint32_t quad[NUM_BOUNCES] = {0};
-uint32_t bounce_count = 0;
-uint32_t timer_delay = 20000;
-
 int32_t sum = 0;
+
+int32_t sums[NUM_CHANNELS] = {0};
+
+int32_t timeout = 0;
 
 int32_t counter = -1;
 
@@ -35,13 +33,9 @@ void TIM6_DAC_IRQHandler(void)
     // Acknowledge interrupt
     TIM6->SR &= ~TIM_SR_UIF;
 
-    if(timer_delay < 20000) {
-        timer_delay += 1;
+    if(timeout != 0) {
+        timeout -= 1;
         return;
-    }
-
-    for(int i = 0; i < NUM_CHANNELS; i++) {
-        thresh400[i] = -1;
     }
 
     // Read ADC conversion
@@ -58,85 +52,29 @@ void TIM6_DAC_IRQHandler(void)
                 adc_index = 0;
                 sum = 0;
 
+                timeout = 250;
+
+                for(int i = 0; i < NUM_CHANNELS; i++)
+                    sums[i] = 0;
+
                 for(int i = 0; i < NUM_CHANNELS; i+=2)
                     for(int j = 0; j < COUNTDOWN; j++) {
                         sum += adc_in[i][j];
                         sum -= adc_in[i+1][j];
                     }
 
-                for(int i = 0; i < NUM_CHANNELS; i++) {
-                    for(int j = 0; j < COUNTDOWN; j++) {
-                        if(adc_in[i][j] > 400) {
-                            thresh400[i] = j;
-                            if(j > max_thresh400)
-                                max_thresh400 = j;
-                            break;
-                        }
-                    }
-                }
-
-                // TODO: these mappings are subject to change w/ wiring
-                                                                                                                                                                                                   if(thresh400[0] == 0)
-                    quad[bounce_count] = 1;
-                else if (thresh400[1] == 0)
-                    quad[bounce_count] = 2;
-                else if(thresh400[3] == 0)
-                    quad[bounce_count] = 3;
-                else
-                    quad[bounce_count] = 4;
-
-                bounce_count++;
-//                timer_delay = 0;
-
-                if(bounce_count == 10)
-                    bounce_count = 0;
+                for(int i = 0; i < NUM_CHANNELS; i++)
+                    for(int j = 0; j < COUNTDOWN; j++)
+                        sums[i] += adc_in[i][j];
 
                 if(!(packet & (BOUNCE_RED | BOUNCE_BLUE))) {
                     if(sum >= 0) {
                         packet |= BOUNCE_RED;
-#ifdef DEBUG_MODE
-                        GPIOC->ODR |= GPIO_ODR_6;
-#endif
-
-#ifdef TRILATERATION_MODE
-                        // 1. picks the 3 mics
-                        // 2. converts each sample count delay to ms
-                        int mics[3] = getMics(BOUNCE_RED, adc_in);
-                        float delays[3] = getDelays(BOUNCE_RED, mics, adc_in);
-
-                        // TODO: set MAX_DELAY by testing
-                        // normalize values to MAX_DELAY
-                        float max_delay = delays[0];
-                        for(int i = 1; i < 3; i++)
-                            if(delays[i] > max_delay)
-                                max_delay = delays[i];
-
-                        float norm_factor = MAX_DELAY - max_delay;
-                        if(norm_factor < 0)
-                            norm_factor = 0;
-
-                        for(int i = 0; i < 3; i++)
-                            delays[i] += norm_factor;
-
-                        // TODO: here - check that the max delays[i] is nearly MAX_DELAY
-
-                        // create quarter circles
-
-
-                        for(int i = 0; i < 3; i++) {
-                            switch(mics[i]) {
-                                case 1:
-                            }
-                        }
-
-#endif
                     } else {
                         packet |= BOUNCE_BLUE;
-#ifdef DEBUG_MODE
-                        GPIOC->ODR |= GPIO_ODR_9;
-#endif
                     }
                 } else {
+                    // TODO:
 //                    if(sum >= 0)
 //                        packet |= BOUNCE_RED;
 //                    else
@@ -196,15 +134,6 @@ void setup_adc(void)
     GPIOA->MODER |= GPIO_MODER_MODER2;
     GPIOA->MODER |= GPIO_MODER_MODER3;
 
-#ifdef DEBUG_MODE
-    RCC->AHBENR |= RCC_AHBENR_GPIOCEN;
-    GPIOC->MODER |= GPIO_MODER_MODER6_0;
-    GPIOC->MODER |= GPIO_MODER_MODER7_0;
-    GPIOC->MODER |= GPIO_MODER_MODER8_0;
-    GPIOC->MODER |= GPIO_MODER_MODER9_0;
-#endif
-
-
     // Enable clock to ADC
     RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
 
@@ -253,79 +182,3 @@ int read_adc(void)
     // Return value read from ADC->DR
     return ADC1->DR;
 }
-
-// TODO: ignore this until we need trilateration
-#ifndef DEBUG_MODE
-void calibrate_adc(void)
-{
-    int mins[8];
-    int maxs[8];
-
-
-    // run 8 tests to pick. for now, use debug to stop
-    // todo: read all channels during test
-    // todo: "wait for bounce" / use timer
-
-    for(int i = 0; i < 8; i++)
-    {
-        channel = 0;
-        adc_index = 0;
-
-        while(1)
-        {
-
-            start_adc_channel(channel);
-            adc_in[channel][adc_index] = read_adc();
-
-            nano_wait(1000000);
-
-            if(++adc_index == NUM_SAMPLES)
-            {
-                mins[i] = adc_in[0][0];
-                maxs[i] = adc_in[0][0];
-
-                for(int j = 1; j < NUM_SAMPLES; j++)
-                {
-                    if(mins[i] > adc_in[0][j])
-                        mins[i] = adc_in[0][j];
-
-                    if(maxs[i] < adc_in[0][j])
-                        maxs[i] = adc_in[0][j];
-                }
-
-                // 0: CONTROL - no drop
-                // 1: direct
-                // 2: far corner
-                // 3: CONTROL
-                // 4: side corner
-                // 5: side corner
-                // 6: CONTROL
-                // 7: direct
-                // 8: center
-                adc_index = 0;
-                break;
-            }
-        }
-
-    }
-
-    // the MINIMUM scanning point
-    int zero_point = (maxs[0] + maxs[3] + maxs[6]) / 3;
-
-    // TODO: make robust - ensure this is the largest max val
-    // the max detected ball bounce
-    // TODO? we can use this as an "upper limit" of sorts? DOWN THE ROAD
-    // TODO? have a different threshold per mic?
-    int max_point = maxs[1];
-
-    // the (high side) expected bounce noise
-    // keep in mind, hitting the ball w/ the paddle will increase the velocity --> increase the signal
-    int avg_max_point = (maxs[1] + maxs[2] + maxs[4] + maxs[5] + maxs[7] + maxs[8]) / 6;
-
-    // the safe max point - lower signal
-    int safe_max_point = (maxs[2] + maxs[4] + maxs[5]) / 3;
-
-    // "safe" threshold
-    threshold = (safe_max_point >> 1) + (safe_max_point >> 2);
-}
-#endif

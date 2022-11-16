@@ -38,6 +38,8 @@ void setup_uart(void)
 
     // 115.2 kbaud
     USART5->BRR = 0x1A1;
+
+    // TODO: depends on clock... for 8 MHz v
     USART5->BRR = 0x45;
 
     // Enable Tx, Rx
@@ -67,8 +69,6 @@ int send_packet(void)
     uint8_t temp_packet = packet;
 
     USART5->TDR = packet;
-//    if(packet != 0)
-//    USART5->TDR = 65;
     packet = 0;
 
     return temp_packet;
@@ -89,10 +89,7 @@ void USART3_4_5_6_7_8_IRQHandler(void)
     switch(input_packet)
     {
         case REQUEST_DATA:
-//        case 255:
             send_packet();
-            GPIOC->ODR &= ~GPIO_ODR_6;
-            GPIOC->ODR &= ~GPIO_ODR_9;
             break;
         case RESTART_MICRO:
             NVIC_SystemReset();

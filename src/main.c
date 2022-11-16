@@ -33,11 +33,7 @@ int main()
     int blue_score = 0;
     int last_bounce = 0;
 
-#ifndef DEBUG_MODE
-    calibrate_adc();
-#else
     set_threshold(400);
-#endif
 
     setup_tim7();
     setup_tim6();
@@ -49,8 +45,6 @@ int main()
 #ifndef DEBUG_MODE
         nano_wait(10000000);
         uint8_t sent_packet = send_packet();
-        GPIOC->ODR &= ~GPIO_ODR_6;
-        GPIOC->ODR &= ~GPIO_ODR_9;
 
         sent_packet &= (BOUNCE_RED | BOUNCE_BLUE);
 
@@ -58,16 +52,12 @@ int main()
             if(last_bounce == sent_packet) {
                 if(last_bounce == 1) {
                     red_score += 1;
-                    GPIOC->ODR |= GPIO_ODR_7;
                 } else {
                     blue_score += 1;
-                    GPIOC->ODR |= GPIO_ODR_8;
                 }
                 last_bounce = 0;
             } else {
                 last_bounce = sent_packet;
-                GPIOC->ODR &= ~GPIO_ODR_7;
-                GPIOC->ODR &= ~GPIO_ODR_8;
             }
         }
 #endif

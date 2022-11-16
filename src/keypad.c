@@ -112,9 +112,6 @@ void EXTI4_15_IRQHandler(void)
     int keypad_col = EXTI->PR >> 4;
     int pin = keypad_row << 2;
 
-    // TODO: check the rest of the unchecked rows?
-    // to ensure no missed double press?
-
     uint8_t key = 0;
 
     // Get column
@@ -142,9 +139,6 @@ void EXTI4_15_IRQHandler(void)
         EXTI->PR |= 0xf0;
         return;
     }
-
-//    if(packet & KEY_PRESS)
-//        return;
 
     // Get key
     switch(pin) {
