@@ -1,0 +1,15 @@
+CMSIS/*
+Debug/*
+inc/*
+startup/*
+StdPeriph_Driver/*
+.cproject
+dom.cfg
+lab10 Debug.cfg
+LinkerScript.ld
+sub.cfg
+.settings/*
+.project
+src/syscalls.c
+src/system_stm32f0xx.c
+
