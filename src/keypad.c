@@ -133,6 +133,10 @@ void EXTI4_15_IRQHandler(void)
 
     hist[pin] |= 1;
 
+    // Cheeky 7 fix
+    if(pin == 8)
+        hist[12] |= 1;
+
     // Ensure not bouncing
     if(hist[pin] != 0x1)
     {
