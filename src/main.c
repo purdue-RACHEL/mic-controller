@@ -33,7 +33,7 @@ int main()
     int blue_score = 0;
     int last_bounce = 0;
 
-    set_threshold(400);
+    set_threshold(2000);
 
     setup_tim7();
     setup_tim6();
