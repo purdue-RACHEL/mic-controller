@@ -14,12 +14,13 @@ of the game and what to display, the microcontroller is necessary.
 Our microcontroller sends all of the collected data through the microphones and the keypad to the laptop via [UART](https://www.analog.com/en/analog-dialogue/articles/uart-a-hardware-communication-protocol.html). These changes are then
 processed by the laptop to control the game. The block diagram is shown below.
 
-![alt text](https://cdn.mos.cms.futurecdn.net/HsDtpFEHbDpae6wBuW5wQo-1200-80.jpg.webp)
+![alt text](img/fsd.png)
 
 The information transmitted between the laptop and microcontroller through UART is shown in the packet structure, below. In practice, the
 microcontroller will respond with its current packet data to the laptop upon reception of a REQUEST_PACKET message.
 
-![alt text](https://cdn.mos.cms.futurecdn.net/HsDtpFEHbDpae6wBuW5wQo-1200-80.jpg.webp)
+![alt text](img/ups.png)
+![alt text](img/ups2.png)
 
 ## Major functionalities
 
