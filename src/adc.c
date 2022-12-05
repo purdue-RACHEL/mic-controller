@@ -52,7 +52,7 @@ void TIM6_DAC_IRQHandler(void)
                 adc_index = 0;
                 sum = 0;
 
-                timeout = 250;
+                timeout = 1000;
 
                 for(int i = 0; i < NUM_CHANNELS; i++)
                     sums[i] = 0;
